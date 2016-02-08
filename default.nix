@@ -1,3 +1,4 @@
+{libs ? null}
 let
   pkgs = import <nixpkgs> {};
 
@@ -50,13 +51,19 @@ let
 
       database = arg : rule "database ${arg}";
 
-      obj = file : ''
+      obj = {compiler, source, cflags ? [], lflags ? []} : ''
           UWCC=`${urweb}/bin/urweb -print-ccompiler`
           IDir=`${urweb}/bin/urweb -print-cinclude`
-          CC=`$UWCC -print-prog-name=gcc`
-          $CC -c -I$IDir -I. -o `basename ${file}`.o ${file}
-          echo "link `basename ${file}`.o" >> lib.urp.header
-        '';
+          CC=`$UWCC -print-prog-name=${compiler}`
+          $CC -c -I$IDir -I. ${concatStringsSep " " flags} -o `basename ${source}`.o ${source}
+          echo "link `basename ${source}`.o" >> lib.urp.header
+        '' ++ (lib.optionalString lflags ''
+          echo "link ${lflags}" >> lib.urp.header
+        '');
+
+      obj-c = source : obj { compiler = "gcc"; source = file; };
+      obj-cpp = source : obj { compiler = "g++"; source = file; };
+      obj-cpp-11 = source : obj { compiler = "g++"; source = file; cflags = ["-std=c++11"]; lflags = ["-lstdc++"]; };
 
       include = file : ''
           cp ${file} ${calcFileName file}
@@ -80,6 +87,25 @@ let
         ''
           echo "library ${l}" >> lib.urp.header
         '';
+
+      lib-cache = libs : nm : path :
+        let
+          lib = if libs ? nm then
+                  trace "Taking existing library ${nm}"
+                    libs.nm
+                else
+                  trace "Importing library ${nm}"
+                    (let
+                      i = import "${builtins.toPath l}/build.nix"
+                     in
+                      if isFunction i then i libs else i
+                    );
+        in
+        ''
+          echo "library ${lib}" >> lib.urp.header
+        '';
+
+      lib = if libs != null then lib-cache libs else throw "Library cache was not set";
 
       embed_ = { css ? false, js ? false } : file :
         let
