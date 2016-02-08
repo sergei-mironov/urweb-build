@@ -1,0 +1,3 @@
+[submodule "cake3"]
+	path = cake3
+	url = https://github.com/grwlf/cake3
