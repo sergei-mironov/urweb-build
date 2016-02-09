@@ -1,4 +1,5 @@
-{libs ? null}
+top_libraries :
+
 let
   pkgs = import <nixpkgs> {};
 
@@ -75,37 +76,41 @@ let
           echo "ffi ${uwModuleName file}" >> lib.urp.header
         '';
 
-      lib-extern = l :
-        let
-          lib = "${import "${builtins.toPath l}/build.nix"}";
-        in
-        ''
-          echo "library ${lib}" >> lib.urp.header
-        '';
+      thirdparty = l : { thirdparty = l; };
 
-      lib-local = l :
-        ''
-          echo "library ${l}" >> lib.urp.header
-        '';
+      # import "${builtins.toPath l}/build.nix";
 
-      lib-cache = libs : nm : path :
-        let
-          lib = if libs ? nm then
-                  trace "Taking existing library ${nm}"
-                    libs.nm
-                else
-                  trace "Importing library ${nm}"
-                    (let
-                      i = import "${builtins.toPath l}/build.nix"
-                     in
-                      if isFunction i then i libs else i
-                    );
-        in
-        ''
-          echo "library ${lib}" >> lib.urp.header
-        '';
+      # lib-extern = l :
+      #   let
+      #     lib = "${import "${builtins.toPath l}/build.nix"}";
+      #   in
+      #   ''
+      #     echo "library ${lib}" >> lib.urp.header
+      #   '';
 
-      lib = if libs != null then lib-cache libs else throw "Library cache was not set";
+      # lib-local = l :
+      #   ''
+      #     echo "library ${l}" >> lib.urp.header
+      #   '';
+
+      # lib-cache = libs : nm : path :
+      #   let
+      #     lib = if libs ? nm then
+      #             trace "Taking existing library ${nm}"
+      #               libs.nm
+      #           else
+      #             trace "Importing library ${nm}"
+      #               (let
+      #                 i = import "${builtins.toPath l}/build.nix"
+      #                in
+      #                 if isFunction i then i libs else i
+      #               );
+      #   in
+      #   ''
+      #     echo "library ${lib}" >> lib.urp.header
+      #   '';
+
+      # lib = if libs != null then lib-cache libs else throw "Library cache was not set";
 
       embed_ = { css ? false, js ? false } : file :
         let
@@ -175,7 +180,7 @@ let
         echo $/${nm} >> lib.urp.body
         '';
 
-      mkUrp = {name, statements, isLib ? false, dbms, dbname ? ""} :
+      mkUrp = {name, libraries ? {}, statements, isLib ? false, dbms, dbname ? ""} :
         with lib; with builtins;
         let
           isExe = !isLib;
@@ -203,6 +208,24 @@ let
             ) > ./mkdb.sh
             chmod +x ./mkdb.sh
           '';
+
+          libraries_ = rec {
+
+            local = map (n : v :
+              if v ? thirdparty then (
+                let
+                  load = import "${builtins.toPath v}/build.nix";
+                in
+                  # FIXME: import only library itself, but not tests, etc.
+                  (if isFunction load then load all else load)
+                )
+              else v) (mapAttrs libraries);
+
+            # FIXME: filter only those top_libraries, which exist in local
+            all = local // top_libraries;
+
+          };
+
         in
         stdenv.mkDerivation {
           name = "urweb-urp-${name}";
