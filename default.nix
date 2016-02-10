@@ -62,7 +62,7 @@ let
           $CC -c -I$IDir -I. ${concatStringsSep " " cflags} -o `basename ${source}`.o ${source}
           echo "link `basename ${source}`.o" >> lib.urp.header
         '' + (lib.optionalString (lflags != []) ''
-          echo "link ${lconcatStringsSep " " flags}" >> lib.urp.header
+          echo "link ${concatStringsSep " " lflags}" >> lib.urp.header
         '');
 
       obj-c = source : obj { compiler = "gcc"; inherit source; };
