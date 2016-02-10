@@ -1,6 +1,9 @@
-top_libraries :
+{ libraries ? {} } :
 
 let
+
+  top_libraries = libraries;
+
   pkgs = import <nixpkgs> {};
 
   urweb = pkgs.urweb;
@@ -33,9 +36,9 @@ let
         calcFileName (removeUrSuffixes src)
       );
 
-  defs =  rec {
+  defs = with lib ; with builtins ; rec {
 
-    inherit (pkgs) stdenv lib postgresql sqlite;
+    inherit (pkgs) stdenv postgresql sqlite;
 
     urembed = ./cake3/dist/build/urembed/urembed;
 
@@ -56,15 +59,15 @@ let
           UWCC=`${urweb}/bin/urweb -print-ccompiler`
           IDir=`${urweb}/bin/urweb -print-cinclude`
           CC=`$UWCC -print-prog-name=${compiler}`
-          $CC -c -I$IDir -I. ${concatStringsSep " " flags} -o `basename ${source}`.o ${source}
+          $CC -c -I$IDir -I. ${concatStringsSep " " cflags} -o `basename ${source}`.o ${source}
           echo "link `basename ${source}`.o" >> lib.urp.header
-        '' ++ (lib.optionalString lflags ''
-          echo "link ${lflags}" >> lib.urp.header
+        '' + (lib.optionalString (lflags != []) ''
+          echo "link ${lconcatStringsSep " " flags}" >> lib.urp.header
         '');
 
-      obj-c = source : obj { compiler = "gcc"; source = file; };
-      obj-cpp = source : obj { compiler = "g++"; source = file; };
-      obj-cpp-11 = source : obj { compiler = "g++"; source = file; cflags = ["-std=c++11"]; lflags = ["-lstdc++"]; };
+      obj-c = source : obj { compiler = "gcc"; inherit source; };
+      obj-cpp = source : obj { compiler = "g++"; inherit source; };
+      obj-cpp-11 = source : obj { compiler = "g++"; inherit source; cflags = ["-std=c++11"]; lflags = ["-lstdc++"]; };
 
       include = file : ''
           cp ${file} ${calcFileName file}
@@ -77,6 +80,7 @@ let
         '';
 
       thirdparty = l : { thirdparty = l; };
+      external = thirdparty;
 
       # import "${builtins.toPath l}/build.nix";
 
@@ -180,7 +184,7 @@ let
         echo $/${nm} >> lib.urp.body
         '';
 
-      mkUrp = {name, libraries ? {}, statements, isLib ? false, dbms, dbname ? ""} :
+      mkUrp = {name, libraries ? {}, statements, isLib ? false, dbms ?  defaultDbms, dbname ? ""} :
         with lib; with builtins;
         let
           isExe = !isLib;
@@ -211,20 +215,29 @@ let
 
           libraries_ = rec {
 
-            local = map (n : v :
+            local = mapAttrs (n : v :
               if v ? thirdparty then (
-                let
-                  load = import "${builtins.toPath v}/build.nix";
-                in
-                  # FIXME: import only library itself, but not tests, etc.
-                  (if isFunction load then load all else load)
+                if hasAttr n top_libraries then
+                  trace "Library ${n} is taken from the upstream"
+                    (getAttr n top_libraries)
+                else
+                  trace "Library ${n} is imported by path"
+                    (getAttr n (import "${builtins.toPath v.thirdparty}/build.nix" { libraries = all; }))
                 )
-              else v) (mapAttrs libraries);
+              else
+                trace "Library ${n} is taken by value"
+                  v) libraries;
 
-            # FIXME: filter only those top_libraries, which exist in local
-            all = local // top_libraries;
+            all = top_libraries // local;
 
           };
+
+          librariesS = mapAttrsToList (n : pkg :
+            trace "Placing ${n}"
+            ''
+              echo "library ${pkg}" >> lib.urp.header
+            '')
+            libraries_.local;
 
         in
         stdenv.mkDerivation {
@@ -240,6 +253,7 @@ let
             echo -n > lib.urp.body
 
             ${concatStrings statements}
+            ${concatStrings librariesS}
             ${optionalString isExe (sql "${name}.sql")}
             ${optionalString isPostgres (database "dbname=${name}")}
             ${optionalString isSqlite (database "dbname=${name}.db")}
@@ -258,8 +272,8 @@ let
           '';
         };
 
-      mkLib = {name, statements} : mkUrp { inherit name statements; dbms = ""; isLib = true; };
-      mkExe = {name, statements, dbms ? defaultDbms} : mkUrp { inherit name statements dbms; isLib = false; };
+      mkLib = args : mkUrp (args // { dbms = ""; isLib = true; });
+      mkExe = args : mkUrp (args // { isLib = false; });
 
     };
   };
