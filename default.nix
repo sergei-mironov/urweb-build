@@ -100,40 +100,6 @@ let
       thirdparty = l : { thirdparty = l; };
       external = thirdparty;
 
-      # import "${builtins.toPath l}/build.nix";
-
-      # lib-extern = l :
-      #   let
-      #     lib = "${import "${builtins.toPath l}/build.nix"}";
-      #   in
-      #   ''
-      #     echo "library ${lib}" >> lib.urp.header
-      #   '';
-
-      # lib-local = l :
-      #   ''
-      #     echo "library ${l}" >> lib.urp.header
-      #   '';
-
-      # lib-cache = libs : nm : path :
-      #   let
-      #     lib = if libs ? nm then
-      #             trace "Taking existing library ${nm}"
-      #               libs.nm
-      #           else
-      #             trace "Importing library ${nm}"
-      #               (let
-      #                 i = import "${builtins.toPath l}/build.nix"
-      #                in
-      #                 if isFunction i then i libs else i
-      #               );
-      #   in
-      #   ''
-      #     echo "library ${lib}" >> lib.urp.header
-      #   '';
-
-      # lib = if libs != null then lib-cache libs else throw "Library cache was not set";
-
       embed_ = { css ? false, js ? false } : file :
         let
 
