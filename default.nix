@@ -20,7 +20,11 @@ let
 
   clearNixStore = x : builtins.readFile (builtins.toFile "tmp" x);
 
-  calcFileName = src :
+  unhashedBasename = src : suffix : lib.removeSuffix suffix (unhashedFilename src);
+
+  unhashedBasenameWithSuffixes = src : suffixes : lib.fold (s : acc : lib.removeSuffix s acc) (unhashedFilename src) suffixes;
+
+  unhashedFilename = src :
     with lib; with builtins;
     let
       x =  lastSegment "/" src;
@@ -33,7 +37,7 @@ let
   uwModuleName = src :
     with lib; with builtins;
       replaceStrings ["-" "." "\n"] ["_" "_" ""] (
-        calcFileName (removeUrSuffixes src)
+        unhashedFilename (removeUrSuffixes src)
       );
 
   defs = with lib ; with builtins ; rec {
@@ -47,31 +51,45 @@ let
     public = rec {
 
       set = rule;
-      rule = txt : ''
-          echo "${txt}" >> lib.urp.header
+      rule = txt :
+        let
+          etxt = escape (stringToCharacters "\"'") txt;
+        in
+        trace "Set option: ${etxt}"
+        ''
+          echo "${etxt}" >> lib.urp.header
         '';
 
       sql = file : rule "sql ${file}";
 
       database = arg : rule "database ${arg}";
 
-      obj = {compiler, source, cflags ? [], lflags ? []} : ''
+      obj = {compiler, source, suffixes, cflags ? [], lflags ? []} :
+        let
+          base = unhashedBasenameWithSuffixes source suffixes;
+        in
+        trace "Compiling ${source} into ${base}.o"
+        ''
           UWCC=`${urweb}/bin/urweb -print-ccompiler`
           IDir=`${urweb}/bin/urweb -print-cinclude`
           CC=`$UWCC -print-prog-name=${compiler}`
-          $CC -c -I$IDir -I. ${concatStringsSep " " cflags} -o `basename ${source}`.o ${source}
-          echo "link `basename ${source}`.o" >> lib.urp.header
+          $CC -c -I$IDir -I. ${concatStringsSep " " cflags} -o ${base}.o ${source}
+          echo "link ${base}.o" >> lib.urp.header
         '' + (lib.optionalString (lflags != []) ''
           echo "link ${concatStringsSep " " lflags}" >> lib.urp.header
         '');
 
-      obj-c = source : obj { compiler = "gcc"; inherit source; };
-      obj-cpp = source : obj { compiler = "g++"; inherit source; };
-      obj-cpp-11 = source : obj { compiler = "g++"; inherit source; cflags = ["-std=c++11"]; lflags = ["-lstdc++"]; };
+      obj-c = source : obj { compiler = "gcc"; suffixes = [".c"]; inherit source; };
+      obj-cpp = source : obj { compiler = "g++"; suffixes = [".cpp" ".cxx" ".c++"];
+                              inherit source; };
+      obj-cpp-11 = source : obj { compiler = "g++"; suffixes = [".cpp" ".cxx" ".c++"];
+                                  inherit source; cflags = ["-std=c++11"]; lflags = ["-lstdc++"]; };
 
-      include = file : ''
-          cp ${file} ${calcFileName file}
-          echo "include ${calcFileName file}" >> lib.urp.header
+      include = file :
+        trace "Including ${file} as ${unhashedFilename file}"
+        ''
+          cp ${file} ${unhashedFilename file}
+          echo "include ${unhashedFilename file}" >> lib.urp.header
         '';
 
       ffi = file : ''
@@ -246,8 +264,9 @@ let
             . $stdenv/setup
             mkdir -pv $out
             cd $out
+            echo "Current dir is `pwd`"
 
-            set -x
+            # set -x
 
             echo -n > lib.urp.header
             echo -n > lib.urp.body
