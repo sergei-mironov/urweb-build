@@ -1,10 +1,10 @@
-{ libraries ? {} } :
+{ libraries ? {}
+, pkgs ?  import <nixpkgs> {}
+} :
 
 let
 
   top_libraries = libraries;
-
-  pkgs = import <nixpkgs> {};
 
   urweb = pkgs.urweb;
 
@@ -63,6 +63,16 @@ let
       sql = file : rule "sql ${file}";
 
       database = arg : rule "database ${arg}";
+
+      link = file :
+        let
+          lfile = unhashedBasename file "";
+        in
+        trace "Linking ${file} as ${lfile}"
+        ''
+          cp ${file} ${lfile}
+          echo "link ${lfile}" >> lib.urp.header
+        '';
 
       obj = {compiler, source, suffixes, cflags ? [], lflags ? []} :
         let
