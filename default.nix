@@ -42,7 +42,7 @@ let
 
   defs = with lib ; with builtins ; rec {
 
-    inherit (pkgs) stdenv postgresql sqlite;
+    inherit (pkgs) stdenv postgresql sqlite openssl;
 
     urembed = ./cake3/dist/build/urembed/urembed;
 
@@ -202,7 +202,7 @@ let
             (
             echo "#!/bin/sh"
             echo set -x
-            echo ${sqlite}/bin/sqlite3 ${name}.db \< $out/${name}.sql
+            echo ${sqlite.bin}/bin/sqlite3 ${name}.db \< $out/${name}.sql
             ) > ./mkdb.sh
             chmod +x ./mkdb.sh
           '';
@@ -245,6 +245,7 @@ let
             # set -x
 
             echo -n > lib.urp.header
+            echo "link -L${openssl.out}/lib -L${sqlite.out}/lib" >> lib.urp.header
             echo -n > lib.urp.body
 
             ${concatStrings statements}
