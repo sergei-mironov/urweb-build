@@ -12,6 +12,8 @@ let
 
   trace = builtins.trace;
 
+  cake3 = import ./cake3.nix {nixpkgs = pkgs;};
+
   removeUrSuffixes = s :
     with lib;
     removeSuffix ".ur" (removeSuffix ".urs" s);
@@ -46,7 +48,7 @@ let
 
     sqlite_bin = if sqlite ? bin then sqlite.bin else sqlite;
 
-    urembed = ./cake3/dist/build/urembed/urembed;
+    urembed = "${cake3}/bin/urembed";
 
     defaultDbms = "postgres";
 
