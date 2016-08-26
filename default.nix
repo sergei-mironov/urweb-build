@@ -44,6 +44,8 @@ let
 
     inherit (pkgs) stdenv postgresql sqlite openssl;
 
+    sqlite_bin = if sqlite ? bin then sqlite.bin else sqlite;
+
     urembed = ./cake3/dist/build/urembed/urembed;
 
     defaultDbms = "postgres";
@@ -202,7 +204,7 @@ let
             (
             echo "#!/bin/sh"
             echo set -x
-            echo ${sqlite.bin}/bin/sqlite3 ${name}.db \< $out/${name}.sql
+            echo ${sqlite_bin}/bin/sqlite3 ${name}.db \< $out/${name}.sql
             ) > ./mkdb.sh
             chmod +x ./mkdb.sh
           '';
