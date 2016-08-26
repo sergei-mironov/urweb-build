@@ -28,5 +28,6 @@ Install
    ```
 
 3. Add the urweb-build directory to your NIX\_PATH.
-
-    export NIX_PATH="$NIX_PATH:urweb-build=/path/to/urweb-build"
+   ```
+   export NIX_PATH="$NIX_PATH:urweb-build=/path/to/urweb-build"
+   ```
