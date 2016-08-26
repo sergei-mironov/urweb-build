@@ -11,7 +11,7 @@ Install
 -------
 
 0. Install [Nix](http://nixos.org/nix/) package manager. Probably, it will be
-   a last package manager you ever installed. Installation gives you
+   the last package manager you ever installed. Installation gives you
    `nix-build` tool and the `/nix/store` package collection.
 
 1. Clone the project and its submodule
