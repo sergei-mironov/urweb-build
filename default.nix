@@ -195,9 +195,9 @@ let
             (
             echo "#!/bin/sh"
             echo set -x
-            echo ${postgres}/bin/dropdb --if-exists ${db}
-            echo ${postgres}/bin/createdb ${db}
-            echo ${postgres}/bin/createdb/psql -f $out/${name}.sql ${db}
+            echo ${postgresql}/bin/dropdb --if-exists ${db}
+            echo ${postgresql}/bin/createdb ${db}
+            echo ${postgresql}/bin/psql -f $out/${name}.sql ${db}
             ) > ./mkdb.sh
             chmod +x ./mkdb.sh
           '';
