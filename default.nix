@@ -6,13 +6,13 @@ let
 
   top_libraries = libraries;
 
-  urweb = pkgs.urweb;
-
   lib = pkgs.lib;
 
   trace = builtins.trace;
 
-  cake3 = import ./cake3.nix {nixpkgs = pkgs;};
+  urweb = import ./urweb.nix { inherit pkgs; };
+
+  cake3 = import ./cake3.nix { nixpkgs = pkgs; };
 
   removeUrSuffixes = s :
     with lib;
@@ -94,6 +94,7 @@ let
         '');
 
       obj-c = source : obj { compiler = "gcc"; suffixes = [".c"]; inherit source; };
+
       obj-cpp = source : obj { compiler = "g++"; suffixes = [".cpp" ".cxx" ".c++"];
                               inherit source; };
       obj-cpp-11 = source : obj { compiler = "g++"; suffixes = [".cpp" ".cxx" ".c++"];
