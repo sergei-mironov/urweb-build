@@ -234,7 +234,8 @@ let
           librariesS = mapAttrsToList (n : pkg :
             trace "Placing ${n}"
             ''
-              echo "library ${pkg}" >> lib.urp.header
+              L=`basename ${pkg}`
+              echo "library ../$L" >> lib.urp.header
             '')
             libraries_.local;
 
