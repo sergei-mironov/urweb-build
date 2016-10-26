@@ -31,7 +31,7 @@ case "$PNAM" in
 esac
 
 UR=./${BASE}.ur
-URS=./{$BASE}.urs
+URS=./${BASE}.urs
 
 set -x
 set -e

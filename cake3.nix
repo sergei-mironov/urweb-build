@@ -9,7 +9,7 @@ let
 in
 ghcenv.mkDerivation {
 
-    pname = "mtlm";
+    pname = "cake3";
     version = "0.4.1";
     src = ./cake3;
     isLibrary = false;
@@ -21,8 +21,8 @@ ghcenv.mkDerivation {
       filepath containers text monadloc mtl
       bytestring deepseq system-filepath text-format
       directory attoparsec mime-types
-      language-javascript syb parsec process
-      optparse-applicative ];
+      syb parsec process optparse-applicative
+      utf8-string blaze-builder alex happy];
 
     doCheck = false;
 }
