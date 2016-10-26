@@ -1,4 +1,4 @@
-{ nixpkgs ? import <nixpkgs> {}, ghcver ? "lts-4_2" } :
+{ nixpkgs ? import <nixpkgs> {}, ghcver ? "ghc7103" } :
 let
     pkgs = nixpkgs;
 
