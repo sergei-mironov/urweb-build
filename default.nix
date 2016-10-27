@@ -275,7 +275,7 @@ let
               echo
               cat lib.urp.body
             } > ${urp}
-            # rm lib.urp.header lib.urp.body
+            ${optionalString isExe "cp ${urp} lib.urp"}
 
             ${optionalString isPostgres mkPostgresDB}
             ${optionalString isSqlite mkSqliteDB}
