@@ -82,7 +82,7 @@ let
         let
           base = unhashedBasenameWithSuffixes source suffixes;
         in
-        trace "Compiling ${source} into ${base}.o"
+        trace "Producing rule for compiling ${source} into ${base}.o"
         ''
           UWCC=`${urweb}/bin/urweb -print-ccompiler`
           IDir=`${urweb}/bin/urweb -print-cinclude`
@@ -101,7 +101,7 @@ let
                                   inherit source; cflags = ["-std=c++11"]; lflags = ["-lstdc++"]; };
 
       include = file :
-        trace "Including ${file} as ${unhashedFilename file}"
+        trace "Producing rule for including ${file} as ${unhashedFilename file}"
         ''
           cp ${file} ${unhashedFilename file}
           echo "include ${unhashedFilename file}" >> lib.urp.header
