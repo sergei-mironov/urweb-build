@@ -217,14 +217,23 @@ let
             local = mapAttrs (n : v :
               if v ? thirdparty then (
                 if hasAttr n top_libraries then
-                  trace "Library ${n} is taken from the upstream"
-                    (getAttr n top_libraries)
+                    (
+                    let
+                      up = getAttr n top_libraries;
+                    in
+                      if up ? thirdparty then
+                        trace "Library ${n} (source) is taken from toplevel project"
+                          (getAttr n (import "${builtins.toPath up.thirdparty}/build.nix" { libraries = all; }))
+                      else
+                        trace "Library ${n} (pre-compiled) is taken from toplevel project"
+                          up
+                    )
                 else
-                  trace "Library ${n} is imported by path"
+                  trace "Library ${n} (source) is taken from local project"
                     (getAttr n (import "${builtins.toPath v.thirdparty}/build.nix" { libraries = all; }))
                 )
               else
-                trace "Library ${n} is taken by value"
+                trace "Library ${n} (pre-compiled) is taken from local project"
                   v) libraries;
 
             all = top_libraries // local;
@@ -234,7 +243,8 @@ let
           librariesS = mapAttrsToList (n : pkg :
             trace "Placing ${n}"
             ''
-              L=`basename ${pkg}`
+              P=`readlink -f ${pkg}`
+              L=`basename $P`
               echo "library ../$L" >> lib.urp.header
             '')
             libraries_.local;
