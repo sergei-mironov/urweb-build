@@ -3,7 +3,7 @@ Urweb-Build
 
 This repository contains base expression for building
 [Ur/Web](http://impredicative.com/ur/)
-projects using nix-build tool. For an complex usage example, see
+projects using nix-build tool. For the complex usage example, see
 [urweb-fviewer project](https://github.com/grwlf/urweb-fviewer)
 
 
@@ -14,14 +14,15 @@ Install
    it will be the last package manager for you to install. The istallation provides
    you with the `nix-build` tool and the `/nix/store` package collection.
 
-1. Clone the project and its submodule
+1. Add the urweb-build directory to your NIX\_PATH. This will allow Nix to 
+   interpret instructions like `import <urweb-build> {}` correctly.
+   ```
+   export NIX_PATH="$NIX_PATH:urweb-build=/path/to/urweb-build"
+   ```
+   
+2. Clone the project and its submodule
    ``` 
    $ git clone https://github.com/grwlf/urweb-build
    $ cd urweb-build
    $ git submodule update --init
-   ```
-
-3. Add the urweb-build directory to your NIX\_PATH.
-   ```
-   export NIX_PATH="$NIX_PATH:urweb-build=/path/to/urweb-build"
    ```
