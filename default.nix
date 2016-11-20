@@ -9,6 +9,7 @@ let
   lib = pkgs.lib;
 
   trace = builtins.trace;
+  trace1 = desc : x:  builtins.trace "trace1: ${desc}: ${x}" x;
 
   urweb = import ./urweb.nix { inherit pkgs; };
 
@@ -19,8 +20,6 @@ let
     removeSuffix ".ur" (removeSuffix ".urs" s);
 
   lastSegment = sep : str : lib.last (lib.splitString sep str);
-
-  clearNixStore = x : builtins.readFile (builtins.toFile "tmp" x);
 
   unhashedBasename = src : suffix : lib.removeSuffix suffix (unhashedFilename src);
 
@@ -53,6 +52,8 @@ let
     defaultDbms = "postgres";
 
     public = rec {
+
+      inherit pkgs;
 
       set = rule;
       rule = txt :
@@ -118,7 +119,7 @@ let
       embed_ = { css ? false, js ? false } : file :
         let
 
-          sn = clearNixStore (uwModuleName file);
+          sn = uwModuleName file;
           snc = "${sn}_c";
           snj = "${sn}_j";
           flag_css = if css then "--css-mangle-urls" else "";
@@ -129,7 +130,7 @@ let
             urpFile = "${out}/lib.urp.header";
 
             out = stdenv.mkDerivation {
-              name = "embed-${sn}";
+              name = "embed";
               buildCommand = ''
                 . $stdenv/setup
                 mkdir -pv $out ;
