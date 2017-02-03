@@ -246,18 +246,11 @@ let
             ''
               P=`readlink -f ${pkg}`
               L=`basename $P`
-              echo "library ../$L" >> lib.urp.header
+              echo "library $P" >> lib.urp.header
             '')
             libraries_.local;
 
-        in
-        stdenv.mkDerivation {
-          name = "urweb-urp-${name}";
-          buildCommand = ''
-            . $stdenv/setup
-            mkdir -pv $out
-            cd $out
-            echo "Current dir is `pwd`"
+          urpscript = ''
 
             # set -x
 
@@ -273,10 +266,34 @@ let
 
             {
               cat lib.urp.header
+              if test "$IN_NIX_SHELL" = 1 ; then echo 'debug' ; fi
               echo
               cat lib.urp.body
             } > ${urp}
+
             ${optionalString isExe "cp ${urp} lib.urp"}
+          '';
+
+        in
+        stdenv.mkDerivation {
+          name = "urweb-urp-${name}";
+          buildInputs = [urweb];
+          shellHook = ''
+            rm -rf ./out || true
+            mkdir ./out
+            (cd ./out
+             ${urpscript}
+            )
+            P=./out/${name}
+            echo '$P is set to ' $P
+          '';
+          buildCommand = ''
+            . $stdenv/setup
+            mkdir -pv $out
+            cd $out
+            echo "Current dir is `pwd`"
+
+            ${urpscript}
 
             ${optionalString isPostgres mkPostgresDB}
             ${optionalString isSqlite mkSqliteDB}
