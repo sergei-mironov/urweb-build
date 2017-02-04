@@ -12,6 +12,7 @@ let
   trace1 = desc : x:  builtins.trace "trace1: ${desc}: ${x}" x;
 
   urweb = import ./urweb.nix { inherit pkgs; };
+  urweb-debug = import ./urweb.nix { inherit pkgs; debug = true; };
 
   cake3 = import ./cake3.nix { nixpkgs = pkgs; };
 
@@ -53,7 +54,7 @@ let
 
     public = rec {
 
-      inherit pkgs;
+      inherit pkgs urweb urweb-debug;
 
       set = rule;
       rule = txt :
@@ -184,7 +185,8 @@ let
         echo $/${nm} >> lib.urp.body
         '';
 
-      mkUrp = {name, libraries ? {}, statements, isLib ? false, dbms ?  defaultDbms, dbname ? ""} :
+      mkUrp = {name, libraries ? {}, statements, isLib ? false, dbms ?
+              defaultDbms, dbname ? "", buildInputs ? [], shellHook ? ""} :
         with lib; with builtins;
         let
           isExe = !isLib;
@@ -277,7 +279,7 @@ let
         in
         stdenv.mkDerivation {
           name = "urweb-urp-${name}";
-          buildInputs = [urweb];
+          inherit buildInputs;
           shellHook = ''
             rm -rf ./out || true
             mkdir ./out
@@ -286,6 +288,7 @@ let
             )
             P=./out/${name}
             echo '$P is set to ' $P
+            ${shellHook}
           '';
           buildCommand = ''
             . $stdenv/setup
