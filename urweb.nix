@@ -3,24 +3,23 @@
 with pkgs;
 
 stdenv.mkDerivation rec {
-  basename = "urweb-${version}";
+  basename = "urweb";
   name = basename + (pkgs.lib.optionalString debug "-debug");
-  version = "20161022";
 
-  src = fetchurl {
-    url = "http://www.impredicative.com/ur/${basename}.tgz";
-    sha256 = "060682ad4f2andi9z7liw5z8c2nz7h6k8gd32fm3781qp49i60ks";
-  };
+  src = ./urweb;
+  # fetchurl {
+  #   url = "http://www.impredicative.com/ur/urweb-20161022.tgz";
+  #   sha256 = "060682ad4f2andi9z7liw5z8c2nz7h6k8gd32fm3781qp49i60ks";
+  # };
 
-  buildInputs = [ openssl mlton mysql.client postgresql sqlite ];
-
-  prePatch = ''
-    sed -e 's@/usr/bin/file@${file}/bin/file@g' -i configure
-  '';
+  buildInputs = [ openssl mlton mysql.client postgresql sqlite autoconf automake
+                  libtool ];
 
   configureFlags = "--with-openssl=${openssl.dev}";
 
   preConfigure = ''
+    ./autogen.sh
+    sed -e 's@/usr/bin/file@${file}/bin/file@g' -i configure
     ${if debug then "export CFLAGS='-g -O0';" else ""}
     export PGHEADER="${postgresql}/include/libpq-fe.h";
     export MSHEADER="${lib.getDev mysql.client}/include/mysql/mysql.h";
