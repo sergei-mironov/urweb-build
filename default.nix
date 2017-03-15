@@ -186,7 +186,8 @@ let
         '';
 
       mkUrp = {name, libraries ? {}, statements, isLib ? false, dbms ?
-              defaultDbms, dbname ? "", buildInputs ? [], shellHook ? ""} :
+              defaultDbms, dbname ? "", buildInputs ? [], shellHook ? "",
+              protocol ? "http" } :
         with lib; with builtins;
         let
           isExe = !isLib;
@@ -301,7 +302,7 @@ let
             ${optionalString isPostgres mkPostgresDB}
             ${optionalString isSqlite mkSqliteDB}
 
-            ${optionalString isExe "${urweb}/bin/urweb -dbms ${dbms} ${name}"}
+            ${optionalString isExe "${urweb}/bin/urweb -dbms '${dbms}' -protocol '${protocol}' ${name}"}
           '';
         };
 
