@@ -17,15 +17,20 @@ Install
    Linux distribution like Ubuntu. Installation of NixOS distribution is not
    required.
 
-1. Add the urweb-build directory to your NIX\_PATH. This will allow Nix to
-   interpret instructions like `import <urweb-build> {}` correctly.
-   ```
-   export NIX_PATH="$NIX_PATH:urweb-build=/path/to/urweb-build"
-   ```
-
-2. Clone the project and its submodule
+1. Clone the project and its submodule
    ```
    $ git clone https://github.com/grwlf/urweb-build
    $ cd urweb-build
    $ git submodule update --init
    ```
+
+2. Add the urweb-build directory to your NIX\_PATH. This will allow Nix to
+   interpret instructions like `import <urweb-build> {}` correctly.
+   ```
+   export NIX_PATH="$NIX_PATH:urweb-build=/path/to/urweb-build"
+   ```
+
+Now it should be possible to build compatible Ur/Web projects by moving to
+project directory and typing `nix-build` or `nix-build build.nix` depending on
+the file name of project Nix-expression. Build results are typically accessed by
+following the `./result` symlink.
