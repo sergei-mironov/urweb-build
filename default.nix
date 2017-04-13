@@ -171,13 +171,13 @@ let
       embed-js = embed_ { js = true; };
 
       src = ur : urs : ''
-        cp ${ur} `echo ${ur} | sed 's@.*/[a-z0-9]\+-\(.*\)@\1@'`
-        cp ${urs} `echo ${urs} | sed 's@.*/[a-z0-9]\+-\(.*\)@\1@'`
+        cp ${ur} `basename ${ur} | sed 's@[a-z0-9]\+-\(.*\)@\1@'`
+        cp ${urs} `basename ${urs} | sed 's@[a-z0-9]\+-\(.*\)@\1@'`
         echo ${uwModuleName ur} >> lib.urp.body
         '';
 
       src1 = ur : ''
-        cp ${ur} `echo ${ur} | sed 's@.*/[a-z0-9]\+-\(.*\)@\1@'`
+        cp ${ur} `basename ${ur} | sed 's@[a-z0-9]\+-\(.*\)@\1@'`
         echo ${uwModuleName ur} >> lib.urp.body
         '';
 
