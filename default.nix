@@ -86,8 +86,8 @@ let
         in
         trace "Producing rule for compiling ${source} into ${base}.o"
         ''
-          UWCC=`${urweb}/bin/urweb -print-ccompiler`
-          IDir=`${urweb}/bin/urweb -print-cinclude`
+          UWCC=`$URWEB -print-ccompiler`
+          IDir=`$URWEB -print-cinclude`
           CC=`$UWCC -print-prog-name=${compiler}`
           $CC -c -I$IDir -I. ${concatStringsSep " " cflags} -o ${base}.o ${source}
           echo "link ${base}.o" >> lib.urp.header
@@ -117,7 +117,7 @@ let
       thirdparty = l : { thirdparty = l; };
       external = thirdparty;
 
-      embed_ = { css ? false, js ? false } : file :
+      embed_ = { css ? false, js ? false, debug ? false } : file :
         let
 
           sn = uwModuleName file;
@@ -125,6 +125,8 @@ let
           snj = "${sn}_j";
           flag_css = if css then "--css-mangle-urls" else "";
           flag_js = if js then "-j ${snj}.urs" else "";
+
+          urwebbin = if debug then "${urweb-debug}/bin/urweb" else "${urweb}/bin/urweb";
 
           e = rec {
             urFile = "${out}/${sn}.ur";
@@ -137,6 +139,8 @@ let
                 mkdir -pv $out ;
                 cd $out
 
+                URWEB=${urwebbin}
+
                 (
                 ${urembed} -c ${snc}.c -H ${snc}.h -s ${snc}.urs  -w ${sn}.ur ${flag_css} ${flag_js} ${file}
                 echo 'ffi ${snc}'
@@ -146,8 +150,8 @@ let
                 ) > lib.urp.header
 
 
-                UWCC=`${urweb}/bin/urweb -print-ccompiler`
-                IDir=`${urweb}/bin/urweb -print-cinclude`
+                UWCC=`$URWEB -print-ccompiler`
+                IDir=`$URWEB -print-cinclude`
                 CC=`$UWCC -print-prog-name=gcc`
 
                 echo $CC -c -I$IDir -o ${snc}.o ${snc}.c
@@ -187,7 +191,7 @@ let
 
       mkUrp = {name, libraries ? {}, statements, isLib ? false, dbms ?
               defaultDbms, dbname ? "", buildInputs ? [], shellHook ? "",
-              protocol ? "http" } :
+              protocol ? "http" , debug ? false } :
         with lib; with builtins;
         let
           isExe = !isLib;
@@ -195,6 +199,7 @@ let
           isSqlite = dbms == "sqlite";
           urp = if isLib then "lib.urp" else "${name}.urp";
           db = name;
+          urwebbin = if debug then "${urweb-debug}/bin/urweb" else "${urweb}/bin/urweb";
 
           mkPostgresDB = ''
             (
@@ -255,7 +260,8 @@ let
 
           urpscript = ''
 
-            # set -x
+            set -x
+            URWEB=${urwebbin}
 
             echo -n > lib.urp.header
             echo "link -L${openssl.out}/lib -L${sqlite.out}/lib" >> lib.urp.header
@@ -266,6 +272,7 @@ let
             ${optionalString isExe (sql "${name}.sql")}
             ${optionalString isPostgres (database "dbname=${name}")}
             ${optionalString isSqlite (database "dbname=${name}.db")}
+            ${optionalString debug (set "debug")}
 
             {
               cat lib.urp.header
@@ -302,7 +309,7 @@ let
             ${optionalString isPostgres mkPostgresDB}
             ${optionalString isSqlite mkSqliteDB}
 
-            ${optionalString isExe "${urweb}/bin/urweb -dbms '${dbms}' -protocol '${protocol}' ${name}"}
+            ${optionalString isExe "$URWEB -dbms '${dbms}' -protocol '${protocol}' ${name}"}
           '';
         };
 
